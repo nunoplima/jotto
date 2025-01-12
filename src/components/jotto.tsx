@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useMemo,
+  useRef,
 } from 'react'
 import { WORD_LENGTH, NUM_OF_ROWS } from '../constants'
 import { IGuess } from '../types'
@@ -86,6 +87,8 @@ const JottoBoard: FC<IJottoBoard> = ({
   lettersStatuses,
   setLettersStatuses,
 }) => {
+  const rowRefs = useRef<HTMLDivElement[]>([])
+
   const handleClick = (letter: string) => () => {
     let newLetterStatus = ECharacterStatus.idle
 
@@ -111,16 +114,24 @@ const JottoBoard: FC<IJottoBoard> = ({
 
       // on Enter
       if (key === 'Enter' && guessLength === WORD_LENGTH) {
+        const jots = calculateJots(secretWord, guesses[currentRowIdx].guess)
         setCurrentRowIdx((prevRowIdx) => prevRowIdx + 1)
         setGuesses((prevGuesses) => {
           const updatedGuesses = structuredClone(prevGuesses)
           updatedGuesses[currentRowIdx] = {
             guess: updatedGuesses[currentRowIdx].guess,
-            jots: calculateJots(secretWord, guesses[currentRowIdx].guess),
+            jots,
           }
 
           return updatedGuesses
         })
+
+        if (jots === 0) {
+          rowRefs.current[currentRowIdx].classList.add('animate-shake')
+        } else {
+          rowRefs.current[currentRowIdx].classList.add('animate-scale')
+        }
+
         return
       }
 
@@ -174,9 +185,13 @@ const JottoBoard: FC<IJottoBoard> = ({
   }, [handleKeyPress])
 
   return (
-    <div className="relative flex w-full max-w-md flex-col items-center gap-1 overflow-auto">
+    <div className="relative -m-2.5 flex w-full max-w-md flex-col items-center gap-1 overflow-auto p-2.5">
       {guesses.map(({ guess, jots }, rowIdx) => (
-        <div key={rowIdx} className="flex w-full justify-center gap-1 md:gap-4">
+        <div
+          key={rowIdx}
+          ref={(element: HTMLDivElement) => (rowRefs.current[rowIdx] = element)}
+          className="flex w-full justify-center gap-1 md:gap-4"
+        >
           <div className="flex h-16 w-5/6 flex-shrink-0 items-center gap-1">
             {Array(WORD_LENGTH)
               .fill(null)
@@ -235,7 +250,7 @@ export const Jotto: FC<IJotto> = ({
 
   return (
     <>
-      <div className="relative flex w-full justify-center overflow-hidden">
+      <div className="relative -mt-2.5 flex w-full justify-center overflow-hidden pt-2.5">
         <JottoStatus status={status} secretWord={secretWord} />
         <JottoBoard
           secretWord={secretWord}
