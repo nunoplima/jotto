@@ -1,0 +1,32 @@
+export const LETTERS = [
+  'a',
+  'b',
+  'c',
+  'ç',
+  'd',
+  'e',
+  'f',
+  'g',
+  'h',
+  'i',
+  'j',
+  'k',
+  'l',
+  'm',
+  'n',
+  'o',
+  'p',
+  'q',
+  'r',
+  's',
+  't',
+  'u',
+  'v',
+  'w',
+  'x',
+  'y',
+  'z',
+]
+export const TOTAL_WORDS = 786
+export const NUM_OF_ROWS = 20
+export const WORD_LENGTH = 5

@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'PlaywriteAUSA';
+  src: local('PlaywriteAUSA-Regular'),
+    url('./assets/fonts/PlaywriteAUSA/PlaywriteAUSA-Regular.ttf');
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'PlaywriteAUSA';
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
