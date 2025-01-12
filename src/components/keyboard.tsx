@@ -63,7 +63,7 @@ export const Keyboard = () => {
           <div key={key} className={cn('h-16 cursor-pointer p-1', className)}>
             <div
               onClick={handleKeyPress({ key, keyCode })}
-              className="flex h-full w-full items-center justify-center rounded-md border border-gray-200 transition-all hover:bg-slate-200"
+              className="flex h-full w-full items-center justify-center rounded-md border border-gray-200 transition-all md:hover:bg-slate-200"
             >
               {icon ? icon : key}
             </div>
