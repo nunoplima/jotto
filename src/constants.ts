@@ -27,7 +27,7 @@ export const LETTERS = [
   'y',
   'z',
 ]
-export const TOTAL_WORDS = 786
+export const TOTAL_WORDS = 929
 export const NUM_OF_ROWS = 20
 export const WORD_LENGTH = 5
 export const WINNER_MESSAGES = [

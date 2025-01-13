@@ -1,55 +1,29 @@
-import {
-  Dispatch,
-  SetStateAction,
-  FC,
-  useCallback,
-  useEffect,
-  useState,
-  useMemo,
-  useRef,
-} from 'react'
+import { FC, useCallback, useEffect, useRef } from 'react'
 import {
   WORD_LENGTH,
-  NUM_OF_ROWS,
   WINNER_MESSAGES,
   LOSER_MESSAGES,
+  NUM_OF_ROWS,
 } from '../constants'
-import { IGuess } from '../types'
 import { calculateJots, cn } from '../utils'
 import { DiagonalLine } from './diagonal-line'
 import { Circle } from './circle'
 import Confetti from 'react-confetti'
-import { ECharacterStatus, EStatus } from '../enums'
+import { ECharacterStatus, EJottoStatus } from '../enums'
 import { getWordByNormalizedWord } from '../api'
 import { useFlashMessage } from '../hooks/use-flash-message'
+import { useJottoStore } from '../store'
+import { useShallow } from 'zustand/shallow'
 
-interface IJotto {
-  secretWord: string
-  lettersStatuses: Record<string, ECharacterStatus>
-  setLettersStatuses: Dispatch<SetStateAction<Record<string, ECharacterStatus>>>
-}
+const JottoStatus: FC<{ status: EJottoStatus }> = ({ status }) => {
+  const secretWord = useJottoStore((state) => state.secretWord)
 
-interface IJottoBoard {
-  secretWord: string
-  guesses: IGuess[]
-  currentRowIdx: number
-  status: 'playing' | 'winner' | 'loser'
-  setCurrentRowIdx: Dispatch<SetStateAction<number>>
-  setGuesses: Dispatch<SetStateAction<IGuess[]>>
-  lettersStatuses: Record<string, ECharacterStatus>
-  setLettersStatuses: Dispatch<SetStateAction<Record<string, ECharacterStatus>>>
-}
-
-const JottoStatus: FC<{ status: EStatus; secretWord: string }> = ({
-  status,
-  secretWord,
-}) => {
   return (
     <div
       className={cn(
         'absolute left-1/2 top-1/2 z-10 w-[90vw] -translate-x-1/2 -translate-y-1/2 rounded-lg px-4 py-2 text-center text-xl text-white',
-        status === 'winner' && 'bg-green-400',
-        status === 'loser' && 'bg-red-400',
+        status === 'winner' && 'bg-green-600',
+        status === 'loser' && 'bg-red-500',
       )}
     >
       {status === 'loser' && (
@@ -69,22 +43,33 @@ const JottoStatus: FC<{ status: EStatus; secretWord: string }> = ({
   )
 }
 
-const JottoBoard: FC<IJottoBoard> = ({
-  secretWord,
-  guesses,
-  currentRowIdx,
-  status,
-  setCurrentRowIdx,
-  setGuesses,
-  lettersStatuses,
-  setLettersStatuses,
-}) => {
+const JottoBoard: FC<{ status: EJottoStatus }> = ({ status }) => {
+  const [
+    secretWord,
+    lettersStatuses,
+    setLettersStatuses,
+    guesses,
+    setGuesses,
+    currentRowIdx,
+    setCurrentRowIdx,
+  ] = useJottoStore(
+    useShallow((state) => [
+      state.secretWord,
+      state.lettersStatuses,
+      state.setLettersStatuses,
+      state.guesses,
+      state.setGuesses,
+      state.currentRowIdx,
+      state.setCurrentRowIdx,
+    ]),
+  )
+
+  const rowRefs = useRef<HTMLDivElement[]>([])
+
   const {
     setMessage: setFlashMessage,
     FlashMessage: WordNotFoundFlashMessage,
   } = useFlashMessage()
-
-  const rowRefs = useRef<HTMLDivElement[]>([])
 
   const handleClick = (letter: string) => () => {
     let newLetterStatus = ECharacterStatus.idle
@@ -95,10 +80,10 @@ const JottoBoard: FC<IJottoBoard> = ({
       newLetterStatus = ECharacterStatus.correct
     }
 
-    setLettersStatuses((previousLettersStatuses) => ({
-      ...previousLettersStatuses,
+    setLettersStatuses({
+      ...lettersStatuses,
       [letter]: newLetterStatus,
-    }))
+    })
   }
 
   const handleKeyPress = useCallback(
@@ -107,7 +92,7 @@ const JottoBoard: FC<IJottoBoard> = ({
 
       const guessLength = guesses[currentRowIdx]?.guess.length
 
-      if (status !== EStatus.playing) return
+      if (status !== EJottoStatus.playing) return
 
       // on Enter
       if (key === 'Enter' && guessLength === WORD_LENGTH) {
@@ -127,15 +112,13 @@ const JottoBoard: FC<IJottoBoard> = ({
           return
         }
 
-        const jots = calculateJots(secretWord, guesses[currentRowIdx].guess)
         const { word: guess } = wordData
-        setCurrentRowIdx((prevRowIdx) => prevRowIdx + 1)
-        setGuesses((prevGuesses) => {
-          const updatedGuesses = structuredClone(prevGuesses)
-          updatedGuesses[currentRowIdx] = { guess, jots }
+        const jots = calculateJots(secretWord, guesses[currentRowIdx].guess)
+        const updatedGuesses = structuredClone(guesses)
+        updatedGuesses[currentRowIdx] = { guess, jots }
+        setGuesses(updatedGuesses)
 
-          return updatedGuesses
-        })
+        setCurrentRowIdx(currentRowIdx + 1)
 
         if (jots === 0) {
           rowRefs.current[currentRowIdx].classList.add('animate-shake')
@@ -148,18 +131,16 @@ const JottoBoard: FC<IJottoBoard> = ({
 
       // on Backspace
       if (key === 'Backspace' && guessLength > 0) {
-        setGuesses((prevGuesses) => {
-          const updatedGuesses = structuredClone(prevGuesses)
-          updatedGuesses[currentRowIdx] = {
-            guess: updatedGuesses[currentRowIdx].guess.substring(
-              0,
-              updatedGuesses[currentRowIdx].guess.length - 1,
-            ),
-            jots: updatedGuesses[currentRowIdx].jots,
-          }
+        const updatedGuesses = structuredClone(guesses)
+        updatedGuesses[currentRowIdx] = {
+          guess: updatedGuesses[currentRowIdx].guess.substring(
+            0,
+            updatedGuesses[currentRowIdx].guess.length - 1,
+          ),
+          jots: updatedGuesses[currentRowIdx].jots,
+        }
 
-          return updatedGuesses
-        })
+        setGuesses(updatedGuesses)
 
         return
       }
@@ -173,25 +154,21 @@ const JottoBoard: FC<IJottoBoard> = ({
 
       if (!isValidKey) return
 
-      setGuesses((prevGuesses) => {
-        const updatedGuesses = structuredClone(prevGuesses)
-        updatedGuesses[currentRowIdx] = {
-          guess:
-            (updatedGuesses[currentRowIdx].guess || '') + key.toLowerCase(),
-          jots: updatedGuesses[currentRowIdx].jots,
-        }
-
-        return updatedGuesses
-      })
+      const updatedGuesses = structuredClone(guesses)
+      updatedGuesses[currentRowIdx] = {
+        guess: (updatedGuesses[currentRowIdx].guess || '') + key.toLowerCase(),
+        jots: updatedGuesses[currentRowIdx].jots,
+      }
+      setGuesses(updatedGuesses)
     },
     [
       currentRowIdx,
       guesses,
       secretWord,
       setCurrentRowIdx,
+      setFlashMessage,
       setGuesses,
       status,
-      setFlashMessage,
     ],
   )
 
@@ -225,7 +202,7 @@ const JottoBoard: FC<IJottoBoard> = ({
                     type="button"
                     onClick={handleClick(char)}
                     className="relative flex h-full w-1/5 cursor-pointer items-center justify-center rounded-md border border-red-200 text-lg"
-                    disabled={status !== EStatus.playing || !char}
+                    disabled={status !== EJottoStatus.playing || !char}
                   >
                     {char || ''}
 
@@ -249,44 +226,25 @@ const JottoBoard: FC<IJottoBoard> = ({
   )
 }
 
-export const Jotto: FC<IJotto> = ({
-  secretWord,
-  lettersStatuses,
-  setLettersStatuses,
-}) => {
-  const [guesses, setGuesses] = useState<{ guess: string; jots: number }[]>(
-    Array(NUM_OF_ROWS).fill({ guess: '', jots: 0 }),
-  )
-  const [currentRowIdx, setCurrentRowIdx] = useState(0)
-
-  const status = useMemo(
-    () =>
-      currentRowIdx === NUM_OF_ROWS
-        ? EStatus.loser
-        : guesses[currentRowIdx - 1]?.guess === secretWord
-          ? EStatus.winner
-          : EStatus.playing,
-    [currentRowIdx, guesses, secretWord],
+export const Jotto: FC = () => {
+  const status = useJottoStore(
+    (state): EJottoStatus =>
+      state.currentRowIdx === NUM_OF_ROWS
+        ? EJottoStatus.loser
+        : state.guesses[state.currentRowIdx - 1]?.guess === state.secretWord
+          ? EJottoStatus.winner
+          : EJottoStatus.playing,
   )
 
   return (
     <>
       <div className="relative -mt-2.5 flex w-full justify-center overflow-hidden pt-2.5">
-        <JottoStatus status={status} secretWord={secretWord} />
-        <JottoBoard
-          secretWord={secretWord}
-          guesses={guesses}
-          setGuesses={setGuesses}
-          setCurrentRowIdx={setCurrentRowIdx}
-          currentRowIdx={currentRowIdx}
-          status={status}
-          lettersStatuses={lettersStatuses}
-          setLettersStatuses={setLettersStatuses}
-        />
+        <JottoStatus status={status} />
+        <JottoBoard status={status} />
         <div className="absolute bottom-0 left-0 right-0 h-16 w-full justify-center bg-gradient-to-t from-white to-transparent" />
       </div>
 
-      {status === EStatus.winner && <Confetti />}
+      {status === EJottoStatus.winner && <Confetti />}
     </>
   )
 }

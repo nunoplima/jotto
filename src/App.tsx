@@ -1,50 +1,40 @@
-import { useEffect, useState } from 'react'
-import { ECharacterStatus } from './enums'
+import { useEffect } from 'react'
 import { Keyboard } from './components/keyboard'
 import { Restart } from './components/restart'
 import { Alphabet } from './components/alphabet'
-import { LETTERS, TOTAL_WORDS } from './constants'
 import { Jotto } from './components/jotto'
+import { useJottoStore } from './store'
 import { normalizeWord } from './utils'
+import { TOTAL_WORDS } from './constants'
 
 function App() {
-  const [word, setWord] = useState<string>()
-  const [lettersStatuses, setLettersStatuses] = useState<
-    Record<string, ECharacterStatus>
-  >(() =>
-    LETTERS.reduce(
-      (acc, curr) => ({ ...acc, [curr]: ECharacterStatus.idle }),
-      {},
-    ),
-  )
+  const secretWord = useJottoStore((state) => state.secretWord)
+  const setSecretWord = useJottoStore((state) => state.setSecretWord)
 
   useEffect(() => {
     ;(async function getRandomWord() {
+      if (secretWord) {
+        return
+      }
+
       const randomId = Math.ceil(Math.random() * TOTAL_WORDS)
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/words/${randomId}`,
       )
       const { word } = await res.json()
       const normalizedWord = normalizeWord(word)
-      setWord(normalizedWord)
+      setSecretWord(normalizedWord)
     })()
-  }, [])
+  }, [setSecretWord, secretWord])
 
-  if (!word) {
+  if (!secretWord) {
     return null
   }
 
   return (
     <main className="flex w-full flex-col gap-8 px-2 pt-12">
-      <Alphabet
-        lettersStatuses={lettersStatuses}
-        setLettersStatuses={setLettersStatuses}
-      />
-      <Jotto
-        secretWord={word}
-        lettersStatuses={lettersStatuses}
-        setLettersStatuses={setLettersStatuses}
-      />
+      <Alphabet />
+      <Jotto />
       <Restart />
       <Keyboard />
     </main>

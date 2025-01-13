@@ -1,18 +1,14 @@
-import { Dispatch, SetStateAction, FC } from 'react'
+import { FC } from 'react'
 import { LETTERS } from '../constants'
 import { DiagonalLine } from './diagonal-line'
 import { Circle } from './circle'
 import { ECharacterStatus } from '../enums'
+import { useJottoStore } from '../store'
 
-interface IAlphabet {
-  lettersStatuses: Record<string, string>
-  setLettersStatuses: Dispatch<SetStateAction<Record<string, ECharacterStatus>>>
-}
+export const Alphabet: FC = () => {
+  const lettersStatuses = useJottoStore((state) => state.lettersStatuses)
+  const setLettersStatuses = useJottoStore((state) => state.setLettersStatuses)
 
-export const Alphabet: FC<IAlphabet> = ({
-  lettersStatuses,
-  setLettersStatuses,
-}) => {
   const handleClick = (letter: string) => () => {
     let newLetterStatus = ECharacterStatus.idle
 
@@ -22,10 +18,10 @@ export const Alphabet: FC<IAlphabet> = ({
       newLetterStatus = ECharacterStatus.correct
     }
 
-    setLettersStatuses((previousLettersStatuses) => ({
-      ...previousLettersStatuses,
+    setLettersStatuses({
+      ...lettersStatuses,
       [letter]: newLetterStatus,
-    }))
+    })
   }
 
   return (
