@@ -19,3 +19,12 @@ export const calculateJots = (secretWord: string, guess: string): number => {
 
   return jots
 }
+
+export const normalizeWord = (word: string) => {
+  const normalizedWord = word
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+
+  return normalizedWord
+}

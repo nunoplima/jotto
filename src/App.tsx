@@ -5,6 +5,7 @@ import { Restart } from './components/restart'
 import { Alphabet } from './components/alphabet'
 import { LETTERS, TOTAL_WORDS } from './constants'
 import { Jotto } from './components/jotto'
+import { normalizeWord } from './utils'
 
 function App() {
   const [word, setWord] = useState<string>()
@@ -18,16 +19,13 @@ function App() {
   )
 
   useEffect(() => {
-    ;(async function getWord() {
+    ;(async function getRandomWord() {
       const randomId = Math.ceil(Math.random() * TOTAL_WORDS)
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/words/${randomId}`,
       )
       const { word } = await res.json()
-      const normalizedWord = word
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
+      const normalizedWord = normalizeWord(word)
       setWord(normalizedWord)
     })()
   }, [])

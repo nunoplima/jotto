@@ -3,4 +3,10 @@ interface IGuess {
   jots: number
 }
 
-export type { IGuess }
+interface IWord {
+  word: string
+  normalizedWord: string
+  id: number
+}
+
+export type { IGuess, IWord }

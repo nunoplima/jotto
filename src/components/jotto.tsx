@@ -8,13 +8,19 @@ import {
   useMemo,
   useRef,
 } from 'react'
-import { WORD_LENGTH, NUM_OF_ROWS } from '../constants'
+import {
+  WORD_LENGTH,
+  NUM_OF_ROWS,
+  WINNER_MESSAGES,
+  LOSER_MESSAGES,
+} from '../constants'
 import { IGuess } from '../types'
 import { calculateJots, cn } from '../utils'
 import { DiagonalLine } from './diagonal-line'
 import { Circle } from './circle'
 import Confetti from 'react-confetti'
 import { ECharacterStatus, EStatus } from '../enums'
+import { getWordByNormalizedWord } from '../api'
 
 interface IJotto {
   secretWord: string
@@ -33,21 +39,6 @@ interface IJottoBoard {
   setLettersStatuses: Dispatch<SetStateAction<Record<string, ECharacterStatus>>>
 }
 
-const winnerMessages = [
-  'Parabéns, és um génio!',
-  'És o(a) maior, acertaste!',
-  'Que campeão(ã), ganhaste!',
-  'Uau, és imbatível!',
-]
-
-const loserMessages = [
-  'É tramado mas este jogo está acabado!',
-  'Não foi desta, mas não desistas!',
-  'Ahh, que azar! Tenta outra vez!',
-  'Quase, mas não foi desta!',
-  'Já estiveste mais longe, tenta de novo!',
-]
-
 const JottoStatus: FC<{ status: EStatus; secretWord: string }> = ({
   status,
   secretWord,
@@ -63,14 +54,14 @@ const JottoStatus: FC<{ status: EStatus; secretWord: string }> = ({
       {status === 'loser' && (
         <div>
           <h3>
-            {loserMessages[Math.floor(Math.random() * loserMessages.length)]}
+            {LOSER_MESSAGES[Math.floor(Math.random() * LOSER_MESSAGES.length)]}
           </h3>
           <p className="mt-2">A palavra era: {secretWord}</p>
         </div>
       )}
       {status === 'winner' && (
         <h3>
-          {winnerMessages[Math.floor(Math.random() * winnerMessages.length)]}
+          {WINNER_MESSAGES[Math.floor(Math.random() * WINNER_MESSAGES.length)]}
         </h3>
       )}
     </div>
@@ -105,7 +96,7 @@ const JottoBoard: FC<IJottoBoard> = ({
   }
 
   const handleKeyPress = useCallback(
-    (e: KeyboardEvent) => {
+    async (e: KeyboardEvent) => {
       const { key } = e
 
       const guessLength = guesses[currentRowIdx]?.guess.length
@@ -114,14 +105,27 @@ const JottoBoard: FC<IJottoBoard> = ({
 
       // on Enter
       if (key === 'Enter' && guessLength === WORD_LENGTH) {
+        // force synchronous layout (reflow): avoids batch updating the layout
+        rowRefs.current[currentRowIdx].classList.remove('animate-shake')
+        void rowRefs.current[currentRowIdx]?.offsetHeight
+
+        // check if the word exists in the DB
+        const wordData = await getWordByNormalizedWord(
+          guesses[currentRowIdx].guess,
+        )
+
+        // if the word does not exist in the DB
+        if (!wordData) {
+          rowRefs.current[currentRowIdx].classList.add('animate-shake')
+          return
+        }
+
         const jots = calculateJots(secretWord, guesses[currentRowIdx].guess)
+        const { word: guess } = wordData
         setCurrentRowIdx((prevRowIdx) => prevRowIdx + 1)
         setGuesses((prevGuesses) => {
           const updatedGuesses = structuredClone(prevGuesses)
-          updatedGuesses[currentRowIdx] = {
-            guess: updatedGuesses[currentRowIdx].guess,
-            jots,
-          }
+          updatedGuesses[currentRowIdx] = { guess, jots }
 
           return updatedGuesses
         })

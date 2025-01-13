@@ -30,3 +30,35 @@ export const LETTERS = [
 export const TOTAL_WORDS = 786
 export const NUM_OF_ROWS = 20
 export const WORD_LENGTH = 5
+export const WINNER_MESSAGES = [
+  'Parabéns, és um génio!',
+  'És o(a) maior, acertaste!',
+  'Que campeão(ã), ganhaste!',
+  'Uau, és imbatível!',
+  'És o mestre dos mestres!',
+  'Nem a NASA te apanha!',
+  'Estás on fire!',
+  'És uma máquina!',
+  'Acertaste em cheio!',
+  'A tua vitória é lendária!',
+  'És um(a) verdadeiro(a) herói(na)!',
+  'Não há quem te pare!',
+  'És o(a) rei/rainha do jogo!',
+  'Vitória épica!',
+  'Estás no topo do mundo!',
+]
+
+export const LOSER_MESSAGES = [
+  'É tramado mas este jogo está acabado!',
+  'Não foi desta, mas não desistas!',
+  'Ahh, que azar! Tenta outra vez!',
+  'Quase, mas não foi desta!',
+  'Já estiveste mais longe, tenta de novo!',
+  'Oh não, game over!',
+  'A sorte não esteve do teu lado!',
+  'Volta e tenta outra vez!',
+  'Ups, quase lá!',
+  'Dá-lhe outra tentativa!',
+  'Não desanimes, continua a tentar!',
+  'Ainda não foi desta, mas não desistas!',
+]
