@@ -21,6 +21,7 @@ import { Circle } from './circle'
 import Confetti from 'react-confetti'
 import { ECharacterStatus, EStatus } from '../enums'
 import { getWordByNormalizedWord } from '../api'
+import { useFlashMessage } from '../hooks/use-flash-message'
 
 interface IJotto {
   secretWord: string
@@ -78,6 +79,11 @@ const JottoBoard: FC<IJottoBoard> = ({
   lettersStatuses,
   setLettersStatuses,
 }) => {
+  const {
+    setMessage: setFlashMessage,
+    FlashMessage: WordNotFoundFlashMessage,
+  } = useFlashMessage()
+
   const rowRefs = useRef<HTMLDivElement[]>([])
 
   const handleClick = (letter: string) => () => {
@@ -117,6 +123,7 @@ const JottoBoard: FC<IJottoBoard> = ({
         // if the word does not exist in the DB
         if (!wordData) {
           rowRefs.current[currentRowIdx].classList.add('animate-shake')
+          setFlashMessage('A palavra não está na lista')
           return
         }
 
@@ -177,7 +184,15 @@ const JottoBoard: FC<IJottoBoard> = ({
         return updatedGuesses
       })
     },
-    [currentRowIdx, guesses, secretWord, setCurrentRowIdx, setGuesses, status],
+    [
+      currentRowIdx,
+      guesses,
+      secretWord,
+      setCurrentRowIdx,
+      setGuesses,
+      status,
+      setFlashMessage,
+    ],
   )
 
   useEffect(() => {
@@ -190,6 +205,8 @@ const JottoBoard: FC<IJottoBoard> = ({
 
   return (
     <div className="relative -m-2.5 flex w-full max-w-md flex-col items-center gap-1 overflow-auto p-2.5">
+      <WordNotFoundFlashMessage />
+
       {guesses.map(({ guess, jots }, rowIdx) => (
         <div
           key={rowIdx}
@@ -268,6 +285,7 @@ export const Jotto: FC<IJotto> = ({
         />
         <div className="absolute bottom-0 left-0 right-0 h-16 w-full justify-center bg-gradient-to-t from-white to-transparent" />
       </div>
+
       {status === EStatus.winner && <Confetti />}
     </>
   )

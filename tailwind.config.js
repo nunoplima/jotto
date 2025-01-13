@@ -6,6 +6,7 @@ export default {
       animation: {
         shake: 'shake 0.82s cubic-bezier(.36,.07,.19,.97) both',
         scale: 'scale 0.5s ease-out',
+        flash: 'flash 1500ms ease-in-out forwards',
       },
       keyframes: {
         shake: {
@@ -26,6 +27,12 @@ export default {
           '0%': { transform: 'scale(1)' },
           '50%': { transform: 'scale(1.05)' },
           '100%': { transform: 'scale(1)' },
+        },
+        flash: {
+          '0%': { opacity: '0' },
+          '10%': { opacity: '1' },
+          '90%': { opacity: '1' },
+          '100%': { opacity: '0' },
         },
       },
     },
